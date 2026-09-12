@@ -15,7 +15,8 @@
 
 
 ### Project Description
-A BLOB DETECTS DEVICE AUDIO , IT WILL MUTE THE AUDIO, USER NEED TO SHOUT TO INCRECE THE AUDIO 
+Shout Me is a chaotic desktop companion that links your system volume to your vocal cords. We analyze the loudness of your microphone in real-time—stay quiet, and the volume drops. Scream, and watch the mascot push your system audio to the absolute limit!
+Create a shortcut on your desktop, leave it running in the background, and control your audio with pure vocal chaos.
 
 ### The Problem (that doesn't exist)
 UNWANTED SOUND CAUSE NOICE POLLUTION....
