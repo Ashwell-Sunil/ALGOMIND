@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: transparent !important;
+        }
+        
+        #mascot {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(5px 5px 15px rgba(0,0,0,0.5));
+            transition: transform 0.05s linear;
+            /* In Electron, this makes the transparent window draggable! */
+            -webkit-app-region: drag;
+            cursor: grab;
+        }
+        
+        #mascot:active {
+            cursor: grabbing;
+        }
+    </style>
+</head>
+<body>
+    <video id="mascot" src="photos/video/video-background-remover.webm" autoplay loop muted playsinline></video>
+    <script>
+        const { ipcRenderer } = require('electron');
+
+        let audioContext;
+        let analyser;
+        let microphone;
+        let audioStream;
+        const mascot = document.getElementById('mascot');
+
+        async function initAudio() {
+            try {
+                audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                audioContext = new window.AudioContext();
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 1024;
+                
+                microphone = audioContext.createMediaStreamSource(audioStream);
+                microphone.connect(analyser);
+                
+                startAudioLoop();
+            } catch (err) {
+                console.error("Mic error in mascot window:", err);
+            }
+        }
+
+        function startAudioLoop() {
+            const dataArray = new Uint8Array(analyser.fftSize);
+            const noiseFloor = 0.02;
+            const maxExpectedRms = 0.15; // Lowered to increase sensitivity (was 0.35)
+            let lastSendTime = 0;
+            let lastSentVolume = -1;
+            
+            let smoothedVolume = 0;
+            let lastScreamTime = 0;
+            let lastFrameTime = performance.now();
+            
+            function update() {
+                analyser.getByteTimeDomainData(dataArray);
+                let sumSquares = 0;
+                for (let i = 0; i < dataArray.length; i++) {
+                    let normalized = (dataArray[i] / 128.0) - 1.0;
+                    sumSquares += normalized * normalized;
+                }
+                let rms = Math.sqrt(sumSquares / dataArray.length);
+                
+                let rawVolume = 0;
+                if (rms > noiseFloor) {
+                    rawVolume = (rms - noiseFloor) / (maxExpectedRms - noiseFloor);
+                    rawVolume = Math.max(0, Math.min(1, rawVolume));
+                }
+                
+                const now = Date.now();
+                const nowFrameTime = performance.now();
+                const deltaTime = nowFrameTime - lastFrameTime;
+                lastFrameTime = nowFrameTime;
+                
+                if (rawVolume > smoothedVolume) {
+                    smoothedVolume = rawVolume;
+                    lastScreamTime = now;
+                } else {
+                    // Small delay before dropping (500ms)
+                    if (now - lastScreamTime > 500) {
+                        // Gradually reduce within 5 seconds (5000ms)
+                        const decreaseRate = 1.0 / 5000;
+                        smoothedVolume -= decreaseRate * deltaTime;
+                        if (smoothedVolume < rawVolume) {
+                            smoothedVolume = rawVolume;
+                        }
+                    }
+                }
+                
+                smoothedVolume = Math.max(0, Math.min(1, smoothedVolume));
+                
+                // Scale the video dynamically
+                const scale = 0.5 + (smoothedVolume * 0.8);
+                mascot.style.transform = `scale(${scale})`;
+                
+                // Send smoothed volume to main process to adjust OS volume
+                if (now - lastSendTime > 150) {
+                    if (Math.abs(smoothedVolume - lastSentVolume) > 0.01) {
+                        ipcRenderer.send('mic-volume', smoothedVolume);
+                        lastSentVolume = smoothedVolume;
+                    }
+                    lastSendTime = now;
+                }
+                
+                requestAnimationFrame(update);
+            }
+            update();
+        }
+
+        window.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            ipcRenderer.send('show-mascot-context-menu');
+        });
+
+        initAudio();
+    </script>
+</body>
+</html>

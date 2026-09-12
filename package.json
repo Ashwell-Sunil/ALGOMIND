@@ -1,0 +1,23 @@
+{
+  "name": "sceammmmm",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "electron": "^44.3.0",
+    "loudness": "^0.4.2"
+  },
+  "devDependencies": {
+    "jimp": "^1.6.1",
+    "png-to-ico": "^3.0.2",
+    "sharp": "^0.35.4"
+  }
+}

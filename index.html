@@ -1,1 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shout Me</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Poppins:wght@700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --clay-bg: #FFFDE7;
+            --clay-accent: #EF5350;
+            --mascot-quiet: #4FC3F7;
+            --mascot-loud: #EF5350;
+        }
 
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #000;
+            color: white;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        .scroll-container {
+            height: 500vh; 
+            position: relative;
+            background-color: #000;
+        }
+
+        .sticky-container {
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        #hero-canvas {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+            z-index: 1;
+        }
+
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center; /* Center horizontally */
+            align-items: flex-start; /* Pin to the top */
+            padding-top: 5vh;        /* Small gap from the top */
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .title {
+            font-family: 'Fredoka', 'Poppins', sans-serif;
+            font-size: clamp(3rem, 10vw, 8rem); 
+            font-weight: 700;
+            text-transform: lowercase;
+            letter-spacing: -2px;
+            line-height: 0.85;
+            text-align: center; /* Center text */
+            white-space: nowrap; /* Force single line */
+            max-width: none;
+            margin-bottom: 4rem; /* Space between title and cards */
+        }
+
+        .title .shout, .title .me {
+            /* Off-white base so the pure white gloss pops */
+            color: #E0E0E0; 
+            /* White balloon 3D Extrusion */
+            text-shadow: 
+                0px 2px 0px #D6D6D6,
+                0px 4px 0px #BDBDBD,
+                0px 6px 0px #9E9E9E,
+                0px 8px 0px #757575,
+                0px 10px 0px #616161,
+                0px 25px 30px rgba(0,0,0,0.4);
+            display: inline-block;
+            position: relative;
+        }
+
+        .title .shout {
+            z-index: 2;
+        }
+
+        .title .me {
+            z-index: 1;
+            transform: rotate(-3deg);
+            margin-left: 20px; /* Add horizontal spacing instead of vertical */
+        }
+
+        /* Glossy Highlights (Plastic/Balloon Reflection) */
+        .title .shout::after, .title .me::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            /* Pure white solid reflection to contrast the off-white base */
+            background: linear-gradient(180deg, #FFFFFF 0%, rgba(255,255,255,0.9) 30%, rgba(255,255,255,0) 40%, transparent 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            z-index: 10;
+            text-shadow: none; 
+            pointer-events: none;
+        }
+
+        /* --- TRUE SPRING PHYSICS VIA CSS --- 
+           This keyframe exactly mimics the physics of a Framer Motion spring 
+           (stiffness: 100, damping: 15). It bounces past 0 and settles. */
+        @keyframes framerSpringReveal {
+            0% { transform: translateY(120px) scale(0.85); opacity: 0; }
+            40% { transform: translateY(-15px) scale(1.02); opacity: 1; }
+            70% { transform: translateY(5px) scale(0.99); opacity: 1; }
+            100% { transform: translateY(0) scale(1); opacity: 1; }
+        }
+
+        .framer-anim {
+            opacity: 0; /* Hidden initially */
+        }
+
+        /* Class added by Javascript when element scrolls into view */
+        .framer-anim.in-view {
+            animation: framerSpringReveal 0.9s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        .details-section {
+            min-height: 100vh;
+            background-color: #111;
+            padding: 8rem 2rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        .bento-grid-unusual {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            grid-auto-rows: minmax(300px, auto);
+            gap: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .card-1 {
+            grid-column: 1 / 8;
+            grid-row: 1 / 3;
+            background-color: #FFD740;
+            color: #111;
+        }
+
+        .card-2 {
+            grid-column: 8 / 13;
+            grid-row: 1 / 2;
+            background-color: var(--clay-bg);
+            color: #111;
+            align-items: center;
+            text-align: center;
+        }
+
+        .card-3 {
+            grid-column: 8 / 13;
+            grid-row: 2 / 3;
+            background-color: var(--clay-accent);
+            color: white;
+        }
+
+        .details-section .clay {
+            border-radius: 40px;
+            padding: 4rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            box-shadow: 
+                15px 15px 30px rgba(0,0,0,0.4), 
+                -15px -15px 30px rgba(255,255,255,0.05),
+                inset 5px 5px 15px rgba(255,255,255,0.4),
+                inset -5px -5px 15px rgba(0,0,0,0.1);
+            border: 2px solid rgba(255,255,255,0.1);
+        }
+
+        .details-section h2 {
+            font-size: 3.5rem;
+            font-weight: 900;
+            margin-bottom: 1.5rem;
+            line-height: 1.1;
+        }
+
+        .details-section p {
+            font-size: 1.3rem;
+            font-weight: 700;
+            line-height: 1.6;
+        }
+
+        .clay-btn {
+            padding: 1.2rem 2.5rem;
+            font-size: 1.2rem;
+            font-weight: 700;
+            font-family: inherit;
+            color: white;
+            background-color: var(--clay-accent);
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            box-shadow: 
+                6px 6px 12px rgba(0,0,0,0.2), 
+                -6px -6px 12px rgba(255,255,255,0.6),
+                inset 3px 3px 6px rgba(255,255,255,0.4),
+                inset -3px -3px 6px rgba(0,0,0,0.2);
+            /* Button needs its own spring transition for hover/active */
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s ease;
+        }
+
+        .clay-btn:active {
+            transform: scale(0.92) translateY(4px);
+            box-shadow: 
+                2px 2px 4px rgba(0,0,0,0.2), 
+                -2px -2px 4px rgba(255,255,255,0.6),
+                inset 6px 6px 12px rgba(0,0,0,0.3),
+                inset -6px -6px 12px rgba(255,255,255,0.1);
+        }
+
+        #mascot {
+            position: fixed;
+            bottom: 40px;
+            right: 40px;
+            width: 150px; /* Wider for the video */
+            height: auto;
+            z-index: 9999;
+            pointer-events: auto; 
+            cursor: grab;
+            user-select: none;
+            /* Video uses transparency, so no background/shadow needed */
+            filter: drop-shadow(5px 5px 15px rgba(0,0,0,0.5)); 
+        }
+
+        #mascot:active {
+            cursor: grabbing;
+        }
+
+        @media (max-width: 1024px) {
+            .bento-grid-unusual {
+                grid-template-columns: 1fr;
+                grid-auto-rows: auto;
+            }
+            .card-1, .card-2, .card-3 {
+                grid-column: 1 / -1;
+                grid-row: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="scroll-container">
+        <div class="sticky-container">
+            <canvas id="hero-canvas"></canvas>
+            
+            <div class="overlay">
+            </div>
+        </div>
+    </div>
+    
+    <section class="details-section">
+        <!-- New Title Location (After the scroll video) -->
+        <h1 class="title framer-anim">
+            <span class="shout" data-text="shout">shout</span>
+            <span class="me" data-text="me">me</span>
+        </h1>
+        
+        <div class="bento-grid-unusual">
+            <div class="clay card-1 framer-anim">
+                <h2 class="">What is this?</h2>
+                <p class="">Shout Me is a chaotic desktop companion that links your system volume to your vocal cords. We analyze the loudness of your microphone in real-time—stay quiet, and the volume drops. Scream, and watch the mascot push your system audio to the absolute limit!</p>
+                <p class="" style="margin-top: 1rem;">Create a shortcut on your desktop, leave it running in the background, and control your audio with pure vocal chaos.</p>
+            </div>
+            
+            <div class="clay card-2 framer-anim activation-card">
+                <h2 class="">Ready?</h2>
+                <button id="activate-btn" class="clay-btn">Activate Screaming Mode</button>
+                <button id="add-widget-btn" class="clay-btn" style="margin-top: 1rem; background-color: #4FC3F7; color: #111;">Create Desktop Shortcut</button>
+            </div>
+            
+            <div class="clay card-3 framer-anim">
+                <h2 class="" style="color: #fff;">The Rules</h2>
+                <p class="" style="color: #fff;">Silence does nothing.<br>Screaming does everything.</p>
+                <p class="" style="margin-top: 1rem; color: #fff;">The mascot only responds when you push the volume to the absolute limit.</p>
+            </div>
+        </div>
+    </section>
+    
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const canvas = document.getElementById('hero-canvas');
+            const context = canvas.getContext('2d');
+            const scrollContainer = document.querySelector('.scroll-container');
+            
+            const frameCount = 300;
+            const currentFrame = index => (
+                `photos/scream%20boy%20png/ezgif-frame-${index.toString().padStart(3, '0')}.png`
+            );
+
+            const images = [];
+
+            const preloadImages = () => {
+                for (let i = 1; i <= frameCount; i++) {
+                    const img = new Image();
+                    img.src = currentFrame(i);
+                    images.push(img);
+                }
+            };
+            
+            preloadImages();
+            
+            // Draw first frame (handle synchronous load from local disk)
+            const drawFirstFrame = () => {
+                canvas.width = images[0].naturalWidth || 1920;
+                canvas.height = images[0].naturalHeight || 1080;
+                context.drawImage(images[0], 0, 0);
+            };
+
+            if (images[0].complete && images[0].naturalWidth !== 0) {
+                drawFirstFrame();
+            } else {
+                images[0].onload = drawFirstFrame;
+                images[0].onerror = (err) => {
+                    console.error("Failed to load first frame:", images[0].src);
+                };
+            }
+
+            // Scrollytelling event and Title Parallax
+            let ticking = false;
+            window.addEventListener('scroll', () => {
+                const scrollTop = window.scrollY;
+                const maxScroll = scrollContainer.scrollHeight - window.innerHeight;
+                
+                const scrollFraction = Math.max(0, Math.min(scrollTop / maxScroll, 1));
+                const frameIndex = Math.min(frameCount - 1, Math.floor(scrollFraction * frameCount));
+                
+                if (!ticking) {
+                    window.requestAnimationFrame(() => {
+                        // Scrub video frames
+                        if (images[frameIndex] && images[frameIndex].complete) {
+                            if (canvas.width !== images[frameIndex].naturalWidth && images[frameIndex].naturalWidth > 0) {
+                                canvas.width = images[frameIndex].naturalWidth;
+                                canvas.height = images[frameIndex].naturalHeight;
+                            }
+                            context.drawImage(images[frameIndex], 0, 0);
+                        }
+                        ticking = false;
+                    });
+                    ticking = true;
+                }
+            });
+
+            // ---- Authentic Spring Animations without External Libraries ----
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        // Adds the class that triggers the CSS @keyframes spring
+                        entry.target.classList.add('in-view');
+                    }
+                });
+            }, { rootMargin: "0px 0px -100px 0px", threshold: 0.1 });
+
+            document.querySelectorAll('.framer-anim').forEach(el => {
+                observer.observe(el);
+            });
+
+
+            // ---- Audio & Mascot Logic (Electron IPC) ----
+            const activateBtn = document.getElementById('activate-btn');
+            const addWidgetBtn = document.getElementById('add-widget-btn');
+            
+            const isElectron = typeof require !== 'undefined';
+            let ipcRenderer = null;
+            if (isElectron) {
+                ipcRenderer = require('electron').ipcRenderer;
+            }
+
+            const toggleMode = () => {
+                if (isElectron && ipcRenderer) {
+                    ipcRenderer.send('toggle-screaming-mode');
+                } else {
+                    alert('Screaming Mode system volume control only works in the Desktop App! Please run `npm start` in your terminal to launch the desktop version.');
+                }
+            };
+
+            activateBtn.addEventListener('click', toggleMode);
+            if (addWidgetBtn) {
+                addWidgetBtn.addEventListener('click', () => {
+                    if (isElectron && ipcRenderer) {
+                        ipcRenderer.send('spawn-desktop-widget');
+                    } else {
+                        alert('Desktop Widget only works in the Desktop App!');
+                    }
+                });
+            }
+
+            if (isElectron && ipcRenderer) {
+                ipcRenderer.on('mode-status', (event, isActive) => {
+                    const updateButton = (btn) => {
+                        if (!btn) return;
+                        if (isActive) {
+                            btn.textContent = 'Deactivate Mode';
+                            btn.style.opacity = '0.9';
+                            btn.style.pointerEvents = 'auto';
+                            btn.style.transform = 'scale(0.95) translateY(2px)';
+                            btn.style.boxShadow = `
+                                4px 4px 8px rgba(0,0,0,0.2), 
+                                -4px -4px 8px rgba(255,255,255,0.1),
+                                inset 4px 4px 8px rgba(0,0,0,0.3),
+                                inset -4px -4px 8px rgba(255,255,255,0.1)
+                            `;
+                        } else {
+                            btn.textContent = 'Activate Screaming Mode';
+                            btn.style.opacity = '1';
+                            btn.style.transform = '';
+                            btn.style.boxShadow = '';
+                        }
+                    };
+                    updateButton(activateBtn);
+                });
+            }
+        });
+    </script>
+</body>
+</html>
