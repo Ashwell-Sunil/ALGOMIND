@@ -11,7 +11,7 @@
 
 ### Team Members
 - Team Lead: ASHWELL - CHRIST COLLAGE OF ENGNEERING 
-- Member 2: EKNA ROSE - CHRIST COLLAGE OF ENGNEERING 
+- Member 2: ELNA ROSE - CHRIST COLLAGE OF ENGNEERING 
 
 
 ### Project Description
